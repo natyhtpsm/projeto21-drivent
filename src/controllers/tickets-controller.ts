@@ -7,10 +7,27 @@ import httpStatus from "http-status";
 export async function getTicketTypes(req: AuthenticatedRequest, res: Response) {
   try {
     const ticketTypes = await ticketService.getTicketTypes();
-
-    return res.status(httpStatus.OK).send(ticketTypes);
+    if (!ticketTypes || ticketTypes.length === 0) {
+      return res.status(httpStatus.OK).json([]); 
+    }
   } catch (error) {
     return res.status(httpStatus.NOT_FOUND).json({ error: 'Nenhum tipo de ingresso encontrado' });
   }
 }
 
+export async function createTicket(req: AuthenticatedRequest, res: Response) {
+  const { userId } = req;
+  const { ticketTypeId } = req.body;
+
+  if (!ticketTypeId) {
+    return res.sendStatus(httpStatus.BAD_REQUEST);
+  }
+
+  try {
+    const ticketTypes = await ticketService.createTicket(userId, ticketTypeId);
+
+    return res.status(httpStatus.CREATED).send(ticketTypes);
+  } catch (error) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+}
