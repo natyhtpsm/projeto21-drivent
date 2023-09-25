@@ -3,8 +3,6 @@ import ticketRepository, { TicketWithTicketType } from "@/repositories/tickets-r
 import { enrollmentRepository } from "@/repositories/enrollments-repository";
 import { TicketStatus } from "@prisma/client";
 import { BadRequestError } from "@/errors/bad-request"; 
-import * as HttpStatus from 'http-status'; 
-
 import { TicketType } from '@prisma/client';
 
 async function createReservedTicket(userId: number, ticketTypeId: number): Promise<TicketWithTicketType> {
