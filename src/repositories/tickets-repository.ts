@@ -5,10 +5,10 @@ async function findTicketTypes() {
   return prisma.ticketType.findMany();
 }
 
-async function createTicket(ticket: CreateTicketParams) {
+async function createTicket(ticketData: CreateTicketParams) {
   return prisma.ticket.create({
     data: {
-      ...ticket,
+      ...ticketData,
     }
   });
 }

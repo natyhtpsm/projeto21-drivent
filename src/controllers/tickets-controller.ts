@@ -5,7 +5,7 @@ import httpStatus from "http-status";
 
 export async function getTicketTypes(req: AuthenticatedRequest, res: Response) {
   try {
-    const ticketTypes = await ticketService.getTicketTypes();
+    const ticketTypes = await ticketService.getTicketTypesList();
     if (ticketTypes.length === 0) {
       return res.status(httpStatus.OK).json([]);
     }
@@ -34,21 +34,21 @@ export async function createTicket(req: AuthenticatedRequest, res: Response) {
   }
 
   try {
-    const ticketTypes = await ticketService.createTicket(userId, ticketTypeId);
+    const ticket = await ticketService.createReservedTicket(userId, ticketTypeId);
 
-    return res.status(httpStatus.CREATED).send(ticketTypes);
+    return res.status(httpStatus.CREATED).send(ticket);
   } catch (error) {
     return res.sendStatus(httpStatus.NOT_FOUND);
   }
 }
 
-export async function getTickets(req: AuthenticatedRequest, res: Response) {
+export async function getTicketsForUser(req: AuthenticatedRequest, res: Response) {
   const { userId } = req;
 
   try {
-    const ticketTypes = await ticketService.getTicketByUserId(userId);
+    const ticket = await ticketService.getTicketForUser(userId);
 
-    return res.status(httpStatus.OK).send(ticketTypes);
+    return res.status(httpStatus.OK).send(ticket);
   } catch (error) {
     return res.sendStatus(httpStatus.NOT_FOUND);
   }
