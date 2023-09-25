@@ -1,18 +1,18 @@
-import { notFoundError } from "@/errors";
+import { unauthorizedError } from "@/errors";
 import ticketRepository, { TicketWithTicketType } from "@/repositories/tickets-repository";
 import { enrollmentRepository } from "@/repositories/enrollments-repository";
 import { TicketStatus } from "@prisma/client";
 import { BadRequestError } from "@/errors/bad-request"; 
 import { TicketType } from '@prisma/client';
 
-async function createReservedTicket(userId: number, ticketTypeId: number): Promise<TicketWithTicketType> {
+async function createReservedTicket(userId: number, ticketTypeId: number): Promise<TicketWithTicketType | null> {
 
   const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
   if (!enrollment) {
-    throw notFoundError();
+    throw unauthorizedError();
   }
   if (!ticketTypeId) {
-    throw new BadRequestError("ticketTypeId é obrigatório no corpo da requisição"); 
+    throw unauthorizedError(); 
   }
   const ticketData = {
     ticketTypeId,
@@ -24,6 +24,10 @@ async function createReservedTicket(userId: number, ticketTypeId: number): Promi
 
   const ticketType = (await ticketRepository.findTicketTypes()).find(type => type.id === ticketTypeId);
 
+  if (!ticketType) {
+    return null;
+  }
+
   return {
     ...newTicket,
     TicketType: ticketType as TicketType,
@@ -33,18 +37,15 @@ async function createReservedTicket(userId: number, ticketTypeId: number): Promi
 async function getTicketForUser(userId: number): Promise<TicketWithTicketType | null> {
   const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
   if (!enrollment) {
-    throw notFoundError();
+    throw unauthorizedError();
   }
   const ticket = await ticketRepository.findTicketByEnrollmentId(enrollment.id);
-  return ticket;
+  return ticket || null;
 }
 
 async function getTicketTypesList() {
   const ticketTypes = await ticketRepository.findTicketTypes();
-  if (!ticketTypes || ticketTypes.length === 0) {
-    return [];
-  }
-  return ticketTypes;
+  return ticketTypes || [];
 }
 
 const ticketService = {

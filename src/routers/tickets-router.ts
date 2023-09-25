@@ -5,7 +5,9 @@ import { getTicketTypes, getTicketsForUser, createTicket } from "@/controllers/t
 const ticketsRouter = Router();
 
 ticketsRouter
-  .get("/types",authenticateToken, getTicketTypes)
-  .get("", authenticateToken, getTicketsForUser)
-  .post("", authenticateToken, createTicket);
+  .all('/*', authenticateToken)
+  .get('/types', getTicketTypes)
+  .get('/', getTicketsForUser)
+  .post('/',createTicket);
+
 export { ticketsRouter };
