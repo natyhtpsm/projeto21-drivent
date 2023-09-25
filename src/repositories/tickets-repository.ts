@@ -1,5 +1,5 @@
 import { prisma } from "@/config";
-import { Ticket, TicketStatus } from "@prisma/client";
+import { Ticket } from "@prisma/client";
 
 async function findTicketTypes() {
   return prisma.ticketType.findMany();
@@ -23,7 +23,6 @@ async function findTicketByEnrollmentId(enrollmentId: number) {
     }
   });
 }
-
 
 export type CreateTicketParams = Omit<Ticket, "id" | "createdAt" | "updatedAt">
 
