@@ -1,40 +1,39 @@
 import { prisma } from "@/config";
 import { Ticket, TicketType } from "@prisma/client";
 
-interface TicketWithTicketType extends Ticket {
+interface EnhancedTicket extends Ticket {
   TicketType: TicketType;
 }
 
-async function findTicketByEnrollmentId(enrollmentId: number): Promise<TicketWithTicketType | null> {
-  return prisma.ticket.findFirst({
-    where: {
-      enrollmentId,
-    },
-    include: {
-      TicketType: true,
-    }
-  });
-}
-
-async function findTicketTypes() {
-  return prisma.ticketType.findMany();
-}
-
-async function createTicket(ticketData: CreateTicketParams) {
-  return prisma.ticket.create({
-    data: {
-      ...ticketData,
-    }
-  });
-}
-
-export type CreateTicketParams = Omit<Ticket, "id" | "createdAt" | "updatedAt">
+type CreateTicketData = Omit<Ticket, "id" | "createdAt" | "updatedAt">;
 
 const ticketRepository = {
-  findTicketTypes,
-  createTicket,
-  findTicketByEnrollmentId
+  async findTicketByEnrollmentId(enrollmentId: number): Promise<EnhancedTicket | null> {
+    const ticket = await prisma.ticket.findFirst({
+      where: {
+        enrollmentId,
+      },
+      include: {
+        TicketType: true,
+      }
+    });
+    return ticket || null;
+  },
+
+  async findTicketTypes(): Promise<TicketType[]> {
+    const ticketTypes = await prisma.ticketType.findMany();
+    return ticketTypes;
+  },
+
+  async createTicket(ticketData: CreateTicketData): Promise<Ticket> {
+    const newTicket = await prisma.ticket.create({
+      data: {
+        ...ticketData,
+      }
+    });
+    return newTicket;
+  }
 };
 
-export { TicketWithTicketType };
+export type { EnhancedTicket, CreateTicketData };
 export default ticketRepository;

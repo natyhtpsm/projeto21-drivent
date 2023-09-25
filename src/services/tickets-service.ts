@@ -1,11 +1,11 @@
 import { unauthorizedError } from "@/errors";
-import ticketRepository, { TicketWithTicketType } from "@/repositories/tickets-repository";
+import ticketRepository, { EnhancedTicket } from "@/repositories/tickets-repository";
 import { enrollmentRepository } from "@/repositories/enrollments-repository";
 import { TicketStatus } from "@prisma/client";
 import { TicketType } from '@prisma/client';
 
 const ticketService = {
-  async createReservedTicket(userId: number, ticketTypeId: number): Promise<TicketWithTicketType | null> {
+  async createReservedTicket(userId: number, ticketTypeId: number): Promise<EnhancedTicket | null> {
     try {
       const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
       if (!enrollment) {
@@ -39,7 +39,7 @@ const ticketService = {
     }
   },
 
-  async getTicketForUser(userId: number): Promise<TicketWithTicketType | null> {
+  async getTicketForUser(userId: number): Promise<EnhancedTicket | null> {
     try {
       const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
       if (!enrollment) {
