@@ -3,15 +3,25 @@ import ticketService from "@/services/tickets-service";
 import { Response } from "express";
 import httpStatus from "http-status";
 
-
 export async function getTicketTypes(req: AuthenticatedRequest, res: Response) {
   try {
     const ticketTypes = await ticketService.getTicketTypes();
-    if (!ticketTypes || ticketTypes.length === 0) {
-      return res.status(httpStatus.OK).json([]); 
+    if (ticketTypes.length === 0) {
+      return res.status(httpStatus.OK).json([]);
     }
+    const formattedTicketTypes = ticketTypes.map((ticketType) => ({
+      id: ticketType.id,
+      name: ticketType.name,
+      price: ticketType.price,
+      isRemote: ticketType.isRemote,
+      includesHotel: ticketType.includesHotel,
+      createdAt: ticketType.createdAt,
+      updatedAt: ticketType.updatedAt,
+    }));
+
+    return res.status(httpStatus.OK).json(formattedTicketTypes);
   } catch (error) {
-    return res.status(httpStatus.NOT_FOUND).json({ error: 'Nenhum tipo de ingresso encontrado' });
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Erro ao buscar os tipos de ingresso' });
   }
 }
 
