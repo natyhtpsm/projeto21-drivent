@@ -1,39 +1,56 @@
-import { prisma } from "@/config";
-import { Ticket, TicketType } from "@prisma/client";
+import { TicketStatus } from '@prisma/client';
+import { prisma } from '@/config';
+import { CreateTicketParams } from '@/protocols';
 
-interface EnhancedTicket extends Ticket {
-  TicketType: TicketType;
+async function findTicketTypes() {
+  const result = await prisma.ticketType.findMany();
+  return result;
 }
 
-type CreateTicketData = Omit<Ticket, "id" | "createdAt" | "updatedAt">;
+async function findTicketByEnrollmentId(enrollmentId: number) {
+  const result = await prisma.ticket.findUnique({
+    where: { enrollmentId },
+    include: { TicketType: true },
+  });
 
-const ticketRepository = {
-  async findTicketByEnrollmentId(enrollmentId: number): Promise<EnhancedTicket | null> {
-    const ticket = await prisma.ticket.findFirst({
-      where: {
-        enrollmentId,
-      },
-      include: {
-        TicketType: true,
-      }
-    });
-    return ticket || null;
-  },
+  return result;
+}
 
-  async findTicketTypes(): Promise<TicketType[]> {
-    const ticketTypes = await prisma.ticketType.findMany();
-    return ticketTypes;
-  },
+async function createTicket(ticket: CreateTicketParams) {
+  const result = await prisma.ticket.create({
+    data: ticket,
+    include: { TicketType: true },
+  });
 
-  async createTicket(ticketData: CreateTicketData): Promise<Ticket> {
-    const newTicket = await prisma.ticket.create({
-      data: {
-        ...ticketData,
-      }
-    });
-    return newTicket;
-  }
+  return result;
+}
+
+async function findTicketById(ticketId: number) {
+  const result = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: { TicketType: true },
+  });
+
+  return result;
+}
+
+async function ticketProcessPayment(ticketId: number) {
+  const result = prisma.ticket.update({
+    where: {
+      id: ticketId,
+    },
+    data: {
+      status: TicketStatus.PAID,
+    },
+  });
+
+  return result;
+}
+
+export const ticketsRepository = {
+  findTicketTypes,
+  findTicketByEnrollmentId,
+  createTicket,
+  findTicketById,
+  ticketProcessPayment,
 };
-
-export type { EnhancedTicket, CreateTicketData };
-export default ticketRepository;

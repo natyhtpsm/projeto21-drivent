@@ -1,68 +1,41 @@
-import { unauthorizedError } from "@/errors";
-import ticketRepository, { EnhancedTicket } from "@/repositories/tickets-repository";
-import { enrollmentRepository } from "@/repositories/enrollments-repository";
-import { TicketStatus } from "@prisma/client";
-import { TicketType } from '@prisma/client';
+import { TicketStatus } from '@prisma/client';
+import { invalidDataError, notFoundError } from '@/errors';
+import { CreateTicketParams } from '@/protocols';
+import { enrollmentRepository, ticketsRepository } from '@/repositories';
 
-const ticketService = {
-  async createReservedTicket(userId: number, ticketTypeId: number): Promise<EnhancedTicket | null> {
-    try {
-      const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
-      if (!enrollment) {
-        throw unauthorizedError();
-      }
-      if (!ticketTypeId) {
-        throw unauthorizedError(); 
-      }
-      
-      const ticketData = {
-        ticketTypeId,
-        enrollmentId: enrollment.id,
-        status: TicketStatus.RESERVED,
-      };
-  
-      const newTicket = await ticketRepository.createTicket(ticketData);
-  
-      const ticketType = (await ticketRepository.findTicketTypes()).find(type => type.id === ticketTypeId);
-  
-      if (!ticketType) {
-        return null;
-      }
-  
-      return {
-        ...newTicket,
-        TicketType: ticketType as TicketType,
-      };
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
-  },
+async function findTicketTypes() {
+  const ticketTypes = await ticketsRepository.findTicketTypes();
+  return ticketTypes;
+}
 
-  async getTicketForUser(userId: number): Promise<EnhancedTicket | null> {
-    try {
-      const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
-      if (!enrollment) {
-        throw unauthorizedError();
-      }
-      const ticket = await ticketRepository.findTicketByEnrollmentId(enrollment.id);
-      return ticket || null;
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
-  },
+async function getTicketByUserId(userId: number) {
+  const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
+  if (!enrollment) throw notFoundError();
 
-  async getTicketTypesList() {
-    try {
-      const ticketTypes = await ticketRepository.findTicketTypes();
-      return ticketTypes || [];
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
-  },
+  const ticket = await ticketsRepository.findTicketByEnrollmentId(enrollment.id);
+  if (!ticket) throw notFoundError();
+
+  return ticket;
+}
+
+async function createTicket(userId: number, ticketTypeId: number) {
+  if (!ticketTypeId) throw invalidDataError('ticketTypeId');
+
+  const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
+  if (!enrollment) throw notFoundError();
+
+  const ticketData: CreateTicketParams = {
+    enrollmentId: enrollment.id,
+    ticketTypeId,
+    status: TicketStatus.RESERVED,
+  };
+
+  const ticket = await ticketsRepository.createTicket(ticketData);
+  return ticket;
+}
+
+export const ticketsService = {
+  findTicketTypes,
+  getTicketByUserId,
+  createTicket,
 };
-
-export default ticketService;
-
