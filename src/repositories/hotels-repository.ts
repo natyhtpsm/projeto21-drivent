@@ -15,9 +15,8 @@ async function getHotelById(id: number) {
     });
 }
 
-const hotelsRepository = {
+export const hotelsRepository = {
     getHotels,
     getHotelById,
 };
 
-export default hotelsRepository;
