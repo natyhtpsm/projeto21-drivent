@@ -9,24 +9,38 @@ async function verifyEnrollmentTicket(userId: number){
     if(!enrollment){
         throw notFoundError();
     }
-
     const ticket = await ticketsRepository.findTicketByEnrollmentId(enrollment.id);
     if(!ticket){
         throw notFoundError();
     }
-    if(ticket.status === "RESERVED" || ticket.TicketType.isRemote || !ticket.TicketType.includesHotel){
+    if(ticket.status !== "PAID"){
         throw paymentRequiredError();
     }
+    if(ticket.TicketType.isRemote === true){ 
+        throw paymentRequiredError();
+    }
+    if(ticket.TicketType.includesHotel === false){
+        throw paymentRequiredError();
+    }
+
 }
 
 async function getHotels(userId: number){
     await verifyEnrollmentTicket(userId);
-    return await hotelsRepository.getHotels();
+    const hotels =  await hotelsRepository.getHotels();
+    if(!hotels){
+        throw notFoundError();
+    }
+    return hotels;
 }
 
 async function getHotelById(id: number, userId: number) {
     await verifyEnrollmentTicket(userId);
-    return await hotelsRepository.getHotelById(id);
+    const hotels = await hotelsRepository.getHotelById(id);
+    if(!hotels){
+        throw notFoundError();
+    }
+    return hotels;
 }
 
 export const hotelsService = {
