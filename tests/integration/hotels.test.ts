@@ -67,10 +67,7 @@ describe("GET /hotels", () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const createdHotel = await createHotel();
-      const createdRoom = await createHotelWithRooms(createdHotel.id);
-      const enrollment = await createEnrollmentWithAddress(user);
-      const ticket = await createTicketType(false, true);
-  
+
       const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
       expect(response.status).toEqual(httpStatus.OK);
       expect(response.body).toEqual([
