@@ -3,6 +3,9 @@ import { ticketsRepository } from "@/repositories";
 import { enrollmentRepository } from "@/repositories";
 import { notFoundError } from "@/errors";
 import { paymentRequiredError } from "@/errors";
+import httpStatus from "http-status";
+import { Response } from "express";
+
 
 async function verifyEnrollmentTicket(userId: number){
     const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
