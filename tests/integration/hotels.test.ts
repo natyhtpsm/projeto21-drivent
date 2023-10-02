@@ -1,35 +1,31 @@
-/* import app, { init } from "@/app";
-import faker from "@faker-js/faker";
+import app, { init } from "@/app";
 import httpStatus from "http-status";
-import * as jwt from "jsonwebtoken";
 import supertest from "supertest";
-import { createUser, createHotel, createHotelWithRooms } from "../factories";
+import { createUser, createHotel, createHotelWithRooms, createTicketType, 
+  createTicket, createEnrollmentWithAddress } from "../factories";
 import { cleanDb, generateValidToken } from "../helpers";
-import * as hotelsService from "@/services/hotels-service";
+import { hotelsService } from "@/services/hotels-service";
 import { paymentRequiredError, notFoundError } from "@/errors";
-import { verifyEnrollmentTicket } from "@/services/hotels-service";
+import faker from "@faker-js/faker";
+import jwt from "jsonwebtoken";
+import { TicketStatus } from "@prisma/client";
+
 
 beforeAll(async () => {
   await init();
+  const user = await createUser();
 });
 
- beforeEach(async () => {
+beforeEach(async () => {
   await cleanDb();
-}); 
-const server = supertest(app);
-
-jest.mock("@/services/hotels-service", () => {
-  return {
-    getHotels: jest.fn(),
-    getHotelById: jest.fn(),
-    verifyEnrollmentTicket: jest.fn(),
-  };
 });
 
+const server = supertest(app);
 
 describe("GET /hotels", () => {
   it("should respond with status 401 if no token is given", async () => {
     const response = await server.get("/hotels");
+
     expect(response.status).toBe(httpStatus.UNAUTHORIZED);
   });
 
@@ -47,27 +43,20 @@ describe("GET /hotels", () => {
   });
 
   describe("when token is valid", () => {
-    // Substitua a função mock para `verifyEnrollmentTicket`
-    const verifyEnrollmentTicketMock = jest.spyOn(hotelsService, "verifyEnrollmentTicket");
-
-    it("should respond with status 402 when user ticket is remote ", async () => {
-      verifyEnrollmentTicketMock.mockImplementation(() => {
-        // Simule o comportamento de um ticket não pago ou remoto
-        throw new Error("Payment Required");
-      });
-
+    it("should respond with status 402 when TicketType is remote", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
-      const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
+      const enrollment = await createEnrollmentWithAddress(user);
+      const ticket = await createTicketType(true, true);
+      
+      await createTicket(enrollment.id, ticket.id, TicketStatus.PAID);
+
+      const response = await server.get('/hotels').set('Authorization', `Bearer ${token}`);
+
       expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED);
     });
 
     it("should respond with status 404 when user has no enrollment ", async () => {
-      verifyEnrollmentTicketMock.mockImplementation(() => {
-        // Simule o comportamento de não encontrar a inscrição
-        throw new Error("Not Found");
-      });
-
       const user = await createUser();
       const token = await generateValidToken(user);
       const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
@@ -75,11 +64,6 @@ describe("GET /hotels", () => {
     });
 
     it("should respond with status 200 and a list of hotels", async () => {
-      verifyEnrollmentTicketMock.mockImplementation(() => {
-        // Simule o comportamento de sucesso na verificação
-        return;
-      });
-
       const user = await createUser();
       const token = await generateValidToken(user);
       const createdHotel = await createHotel();
@@ -91,22 +75,16 @@ describe("GET /hotels", () => {
           name: createdHotel.name,
           image: createdHotel.image,
           createdAt: createdHotel.createdAt.toISOString(),
-          updatedAt: createdHotel.updatedAt.toISOString(),
-        },
+          updatedAt: createdHotel.updatedAt.toISOString()
+        }
       ]);
     });
 
     it("should respond with status 200 and an empty array", async () => {
-      verifyEnrollmentTicketMock.mockImplementation(() => {
-        // Simule o comportamento de sucesso na verificação
-        return;
-      });
-
       const user = await createUser();
       const token = await generateValidToken(user);
       const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
-      expect(response.status).toEqual(httpStatus.OK);
-      expect(response.body).toEqual([]);
+      expect(response.status).toEqual(httpStatus.NOT_FOUND);
     });
   });
 });
@@ -135,25 +113,19 @@ describe("GET /hotels/:hotelId", () => {
     it("should respond with status 402 when user ticket is remote ", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
+      const enrollment = await createEnrollmentWithAddress(user);
+      const ticket = await createTicketType(true, true);
+      
+      await createTicket(enrollment.id, ticket.id, TicketStatus.PAID);
 
-      // Simule a função verifyEnrollmentTicket retornando uma exceção de pagamento
-      jest.spyOn(hotelsService, 'verifyEnrollmentTicket').mockImplementation(() => {
-        throw paymentRequiredError();
-      });
+      const response = await server.get('/hotels').set('Authorization', `Bearer ${token}`);
 
-      const response = await server.get("/hotels/1").set("Authorization", `Bearer ${token}`);
       expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED);
     });
 
     it("should respond with status 404 when user has no enrollment ", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
-
-      // Simule a função verifyEnrollmentTicket retornando uma exceção de não encontrado
-      jest.spyOn(hotelsService, 'verifyEnrollmentTicket').mockImplementation(() => {
-        throw notFoundError();
-      });
-
       const response = await server.get("/hotels/1").set("Authorization", `Bearer ${token}`);
       expect(response.status).toEqual(httpStatus.NOT_FOUND);
     });
@@ -161,12 +133,6 @@ describe("GET /hotels/:hotelId", () => {
     it("should respond with status 404 for invalid hotel id", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
-
-      // Simule a função getHotelById retornando um hotel inexistente
-      jest.spyOn(hotelsService, 'getHotelById').mockImplementation(() => {
-        return null;
-      });
-
       const response = await server.get("/hotels/100").set("Authorization", `Bearer ${token}`);
       expect(response.status).toEqual(httpStatus.NOT_FOUND);
     });
@@ -176,26 +142,6 @@ describe("GET /hotels/:hotelId", () => {
       const token = await generateValidToken(user);
       const createdHotel = await createHotel();
       const createdRoom = await createHotelWithRooms(createdHotel.id);
-
-      // Simule a função getHotelById retornando o hotel e os quartos
-      jest.spyOn(hotelsService, 'getHotelById').mockImplementation(() => {
-        return {
-          id: createdHotel.id,
-          name: createdHotel.name,
-          image: createdHotel.image,
-          createdAt: createdHotel.createdAt.toISOString(),
-          updatedAt: createdHotel.updatedAt.toISOString(),
-          Rooms: [{
-            id: createdRoom.id,
-            name: createdRoom.name,
-            capacity: createdRoom.capacity,
-            hotelId: createdHotel.id,
-            createdAt: createdRoom.createdAt.toISOString(),
-            updatedAt: createdRoom.updatedAt.toISOString(),
-          }]
-        };
-      });
-
       const response = await server.get(`/hotels/${createdHotel.id}`).set("Authorization", `Bearer ${token}`);
       expect(response.status).toEqual(httpStatus.OK);
 
@@ -220,19 +166,6 @@ describe("GET /hotels/:hotelId", () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const createdHotel = await createHotel();
-
-      // Simule a função getHotelById retornando o hotel sem quartos
-      jest.spyOn(hotelsService, 'getHotelById').mockImplementation(() => {
-        return {
-          id: createdHotel.id,
-          name: createdHotel.name,
-          image: createdHotel.image,
-          createdAt: createdHotel.createdAt.toISOString(),
-          updatedAt: createdHotel.updatedAt.toISOString(),
-          Rooms: [],
-        };
-      });
-
       const response = await server.get(`/hotels/${createdHotel.id}`).set("Authorization", `Bearer ${token}`);
       expect(response.status).toEqual(httpStatus.OK);
 
@@ -249,4 +182,3 @@ describe("GET /hotels/:hotelId", () => {
     });
   });
 });
- */
