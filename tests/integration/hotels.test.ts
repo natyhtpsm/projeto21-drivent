@@ -63,10 +63,14 @@ describe("GET /hotels", () => {
       expect(response.status).toEqual(httpStatus.NOT_FOUND);
     });
 
-    it("should respond with status 200 and a list of hotels", async () => {
+    it("should respond with status 200 and all hotels", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const createdHotel = await createHotel();
+      const createdRoom = await createHotelWithRooms(createdHotel.id);
+      const enrollment = await createEnrollmentWithAddress(user);
+      const ticket = await createTicketType(false, true);
+  
       const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
       expect(response.status).toEqual(httpStatus.OK);
       expect(response.body).toEqual([
@@ -74,13 +78,11 @@ describe("GET /hotels", () => {
           id: createdHotel.id,
           name: createdHotel.name,
           image: createdHotel.image,
-          createdAt: createdHotel.createdAt.toISOString(),
-          updatedAt: createdHotel.updatedAt.toISOString()
         }
       ]);
     });
 
-    it("should respond with status 200 and an empty array", async () => {
+    it("should respond with status 404 when no hotel is foud", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
@@ -122,6 +124,14 @@ describe("GET /hotels/:hotelId", () => {
 
       expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED);
     });
+    
+    it("should respond with status 404 and hotel with no rooms", async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+      const createdHotel = await createHotel();
+      const response = await server.get(`/hotels/${createdHotel.id}`).set("Authorization", `Bearer ${token}`);
+      expect(response.status).toEqual(httpStatus.NOT_FOUND);
+    });
 
     it("should respond with status 404 when user has no enrollment ", async () => {
       const user = await createUser();
@@ -149,36 +159,15 @@ describe("GET /hotels/:hotelId", () => {
         id: createdHotel.id,
         name: createdHotel.name,
         image: createdHotel.image,
-        createdAt: createdHotel.createdAt.toISOString(),
-        updatedAt: createdHotel.updatedAt.toISOString(),
         Rooms: [{
           id: createdRoom.id,
           name: createdRoom.name,
           capacity: createdRoom.capacity,
-          hotelId: createdHotel.id,
-          createdAt: createdRoom.createdAt.toISOString(),
-          updatedAt: createdRoom.updatedAt.toISOString(),
+          hotelId: createdHotel.id
         }]
       });
     });
 
-    it("should respond with status 200 and hotel with no rooms", async () => {
-      const user = await createUser();
-      const token = await generateValidToken(user);
-      const createdHotel = await createHotel();
-      const response = await server.get(`/hotels/${createdHotel.id}`).set("Authorization", `Bearer ${token}`);
-      expect(response.status).toEqual(httpStatus.OK);
 
-      expect(response.body).toEqual(
-        {
-          id: createdHotel.id,
-          name: createdHotel.name,
-          image: expect.any(String),
-          createdAt: createdHotel.createdAt.toISOString(),
-          updatedAt: createdHotel.updatedAt.toISOString(),
-          Rooms: [],
-        }
-      );
-    });
   });
 });
