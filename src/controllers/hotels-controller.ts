@@ -12,6 +12,9 @@ export async function getHotels(req: AuthenticatedRequest, res: Response) {
         if(error.name === "PaymentRequiredError"){
             return res.status(httpStatus.PAYMENT_REQUIRED).json(error);
         }
+        if(error.name === "NotFoundError"){
+            return res.status(httpStatus.NOT_FOUND).json(error);
+        }
     }
     
 }
@@ -25,6 +28,9 @@ export async function getHotelById(req: AuthenticatedRequest, res: Response) {
     } catch(error){
         if(error.name === "PaymentRequiredError"){
             return res.status(httpStatus.PAYMENT_REQUIRED).json(error);
+        }
+        if(error.name === "NotFoundError"){
+            return res.status(httpStatus.NOT_FOUND).json(error);
         }
     }
    
