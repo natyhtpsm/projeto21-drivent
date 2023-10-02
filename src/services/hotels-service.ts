@@ -11,12 +11,16 @@ async function verifyEnrollmentTicket(userId: number){
     }
 
     const ticket = await ticketsRepository.findTicketByEnrollmentId(enrollment.id);
-    if(!ticket || ticket.status === "RESERVED" || ticket.TicketType.isRemote || !ticket.TicketType.includesHotel){
+    if(!ticket){
+        throw notFoundError();
+    }
+    if(ticket.status === "RESERVED" || ticket.TicketType.isRemote || !ticket.TicketType.includesHotel){
         throw paymentRequiredError();
     }
 }
 
-async function getHotels(userId: number) {
+async function getHotels(userId: number){
+    await verifyEnrollmentTicket(userId);
     return await hotelsRepository.getHotels();
 }
 
