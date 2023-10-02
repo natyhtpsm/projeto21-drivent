@@ -2,7 +2,7 @@ import { hotelsRepository } from "@/repositories/hotels-repository";
 import { ticketsRepository } from "@/repositories";
 import { enrollmentRepository } from "@/repositories";
 import { notFoundError } from "@/errors";
-import { paymentRequiredError } from "@/errors/payment-requred-error";
+import { paymentRequiredError } from "@/errors";
 
 async function verifyEnrollmentTicket(userId: number){
     const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
