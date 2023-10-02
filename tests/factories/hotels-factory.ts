@@ -4,8 +4,9 @@ import { prisma } from "@/config";
 export async function createHotel(params: any = {}) {
     return prisma.hotel.create({
         data: {
-            name: params.name || faker.lorem.words(2),
-            image: params.image || faker.image.imageUrl(),
+            name: faker.lorem.words(2),
+            image: faker.image.imageUrl(),
+
         },
     });
 }

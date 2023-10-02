@@ -2,7 +2,7 @@ import app, { init } from "@/app";
 import httpStatus from "http-status";
 import supertest from "supertest";
 import { createUser, createHotel, createHotelWithRooms, createTicketType, 
-  createTicket, createEnrollmentWithAddress } from "../factories";
+  createTicket, createEnrollmentWithAddress, createPayment } from "../factories";
 import { cleanDb, generateValidToken } from "../helpers";
 import { hotelsService } from "@/services/hotels-service";
 import { paymentRequiredError, notFoundError } from "@/errors";
@@ -66,8 +66,12 @@ describe("GET /hotels", () => {
     it("should respond with status 200 and all hotels", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
+      const enrollment = await createEnrollmentWithAddress(user);
+      const ticketType = await createTicketType(true, true);
+      
+      const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.PAID);      
+      await createPayment(ticket.id, ticketType.price);
       const createdHotel = await createHotel();
-
       const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
       expect(response.status).toEqual(httpStatus.OK);
       expect(response.body).toEqual([
@@ -75,6 +79,8 @@ describe("GET /hotels", () => {
           id: createdHotel.id,
           name: createdHotel.name,
           image: createdHotel.image,
+          createdAt:createdHotel.createdAt.toISOString(),
+          updatedAt:createdHotel.updatedAt.toISOString(),
         }
       ]);
     });
