@@ -13,16 +13,16 @@ async function verifyEnrollmentTicket(userId: number){
     if(!ticket){
         throw notFoundError();
     }
-    if(ticket.status !== "PAID"){
+    if(ticket.status !== "PAID" || ticket.TicketType.isRemote === true || ticket.TicketType.includesHotel === false){
         throw paymentRequiredError();
     }
-    if(ticket.TicketType.isRemote === true){ 
+/*     if(ticket.TicketType.isRemote === true){ 
         throw paymentRequiredError();
     }
     if(ticket.TicketType.includesHotel === false){
         throw paymentRequiredError();
     }
-
+ */
 }
 
 async function getHotels(userId: number){
