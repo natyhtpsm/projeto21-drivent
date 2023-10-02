@@ -28,7 +28,7 @@ async function verifyEnrollmentTicket(userId: number){
 async function getHotels(userId: number){
     await verifyEnrollmentTicket(userId);
     const hotels =  await hotelsRepository.getHotels();
-    if(!hotels){
+    if(!hotels || (Array.isArray(hotels) && hotels.length === 0)){
         throw notFoundError();
     }
     return hotels;
@@ -37,7 +37,7 @@ async function getHotels(userId: number){
 async function getHotelById(id: number, userId: number) {
     await verifyEnrollmentTicket(userId);
     const hotels = await hotelsRepository.getHotelById(id);
-    if(!hotels){
+    if(!hotels || (Array.isArray(hotels) && hotels.length === 0)){
         throw notFoundError();
     }
     return hotels;
