@@ -32,11 +32,31 @@ async function updateBooking(bookingId: number, roomId: number) {
     }
   });
 }
-
-const bookingRepository = {
-  findBookingByUserId,
-  createBooking,
-  updateBooking
-};
-
+async function isRoomAvailable(roomId: number) {
+    return prisma.room.findFirst({
+      where: {
+        id: roomId
+      },
+      include: {
+        Booking: true
+      }
+    });
+  }
+  
+  
+  async function checkReservation(userId: number) {
+    return prisma.booking.findFirst({
+      where: {
+        userId: userId
+      }
+    });
+  }
+  
+  const bookingRepository = {
+    findBookingByUserId,
+    createBooking,
+    isRoomAvailable,
+    updateBooking,
+    checkReservation
+  };
 export default bookingRepository;
