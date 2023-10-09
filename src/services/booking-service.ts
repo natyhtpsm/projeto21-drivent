@@ -6,7 +6,7 @@ import { ticketsRepository } from "@/repositories/tickets-repository";
 import { forbiddenError } from "@/errors/forbidden-error";
 
 async function getBooking(userId: number) {
-  await checkUserData(userId);
+  await checkEnrollment(userId);
 	
   const booking = await bookingRepository.findBookingByUserId(userId);
 
@@ -22,7 +22,7 @@ async function getBooking(userId: number) {
   };
 }
 
-async function checkUserData(userId: number) {
+async function checkEnrollment(userId: number) {
   const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
   if (!enrollment) {
     throw notFoundError();
@@ -50,7 +50,7 @@ async function checkRoomInfo(roomId: number) {
 }
 
 async function postBooking(userId: number, roomId: number) {
-  await checkUserData(userId);
+  await checkEnrollment(userId);
 
   const isUserBooked = await bookingRepository.findBookingByUserId(userId);
 
@@ -71,7 +71,7 @@ async function postBooking(userId: number, roomId: number) {
 }
 
 async function updateBooking(userId: number, roomId: number, bookingId: number) {
-  await checkUserData(userId);
+  await checkEnrollment(userId);
   await checkRoomInfo(roomId);
 
   const reservation = await bookingRepository.checkReservation(userId);
