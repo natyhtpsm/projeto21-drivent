@@ -3,7 +3,10 @@ import bookingRepository from "@/repositories/booking-repository";
 import bookingService from "@/services/booking-service";
 import { enrollmentRepository, ticketsRepository, } from "@/repositories";
 
-
+beforeEach(() => {
+    jest.clearAllMocks();
+}
+);
 
 describe('GET /booking', () => {
     it('should return 404 when user does not have booking', async () => {
@@ -107,5 +110,64 @@ describe('POST /booking', () => {
         });
 });
 
+describe ('PUT /booking/:id', () => {
+    it('should return 403 when user has no booking', async () => {
+        const mockBooking: Booking & { Room: Room } = {
+            id: 1,
+            userId: 1,
+            roomId: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            Room: {
+                id: 1,
+                hotelId: 1,
+                name: 'Room 1',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                capacity: 1,
+            }
+        };
+        jest.spyOn(bookingRepository, 'findBookingByUserId').mockResolvedValue(null);
+        const promise = bookingService.updateBooking(mockBooking.userId, 
+            mockBooking.roomId, mockBooking.id);
+        await expect(promise).rejects.toEqual({
+            name: 'Forbidden-Error',
+            message: 'Error 403 - Forbidden',
+        });
+    });
+    it('should return 403 when room is full', async () => {
+        const mockBooking: Booking & { Room: Room } = {
+            id: 1,
+            userId: 1,
+            roomId: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            Room: {
+                id: 1,
+                hotelId: 1,
+                name: 'Room 1',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                capacity: 1,
+            }
+        };
+        jest.spyOn(bookingRepository, 'findBookingByUserId').mockResolvedValue(mockBooking);
+        jest.spyOn(bookingRepository, 'isRoomAvailable').mockResolvedValue({
+            id: 1,
+            hotelId: 1,
+            name: 'Room 1',
+            capacity: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            Booking: [mockBooking]
+        } as Room & { Booking: Booking[] });
+        const promise = bookingService.updateBooking(mockBooking.userId, 
+            mockBooking.roomId, mockBooking.id);
+        await expect(promise).rejects.toEqual({
+            name: 'Forbidden-Error',
+            message: 'Error 403 - Forbidden',
+        });
+    });
 
-
+}
+)    
